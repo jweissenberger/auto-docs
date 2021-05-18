@@ -5,6 +5,8 @@ def generate_code_summary(code_snippet,
                           model_and_tokenizer=
                           "SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune"):
 
+    # TODO need to hide warning here
+
     pipeline = SummarizationPipeline(
         model=AutoModelWithLMHead.from_pretrained(model_and_tokenizer),
         tokenizer=AutoTokenizer.from_pretrained(model_and_tokenizer, skip_special_tokens=True)
@@ -48,12 +50,15 @@ def pull_out_top_function(file_string):
 
 
 def add_documentation_to_file(file_name,
-                              model_name="SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune"):
+                              model_name="SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune",
+                              ):
 
     file = read_file(file_name)
 
     sub_file = file
     new_file = file
+
+    # TODO add a verbose mode
 
     while 'def ' in sub_file:
         function = pull_out_top_function(sub_file)
