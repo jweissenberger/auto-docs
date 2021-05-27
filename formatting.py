@@ -1,11 +1,13 @@
 from transformers import AutoTokenizer, AutoModelWithLMHead, SummarizationPipeline
+import warnings
+
+
+warnings.filterwarnings("ignore")
 
 
 def generate_code_summary(code_snippet,
                           model_and_tokenizer=
                           "SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune"):
-
-    # TODO need to hide warning here
 
     pipeline = SummarizationPipeline(
         model=AutoModelWithLMHead.from_pretrained(model_and_tokenizer),
@@ -16,6 +18,8 @@ def generate_code_summary(code_snippet,
 
 
 def read_file(file_name):
+
+    # TODO check that file exists
 
     f = open(file_name, 'r')
     file = f.read()
@@ -62,6 +66,7 @@ def add_documentation_to_file(file_name,
 
     while 'def ' in sub_file:
         function = pull_out_top_function(sub_file)
+        # grab file name and say, "generating documentation for ____
 
         original_function = function
         summary = generate_code_summary(function, model_and_tokenizer=model_name)
