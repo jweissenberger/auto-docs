@@ -1,5 +1,6 @@
 from transformers import AutoTokenizer, AutoModelWithLMHead, SummarizationPipeline
 import warnings
+import os
 
 
 warnings.filterwarnings("ignore")
@@ -19,7 +20,8 @@ def generate_code_summary(code_snippet,
 
 def read_file(file_name):
 
-    # TODO check that file exists
+    assert os.path.isfile(file_name), "Must pass in a file or a path to a file"
+    assert file_name[-3:] == '.py', "File must be a '.py' file "
 
     f = open(file_name, 'r')
     file = f.read()
@@ -53,20 +55,28 @@ def pull_out_top_function(file_string):
     return sub_file.strip()
 
 
+def get_function_name(function: str):
+
+    name = function.split('def')[1].split('(')[0].strip()
+
+    return name
+
+
 def add_documentation_to_file(file_name,
                               model_name="SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune",
                               ):
 
     file = read_file(file_name)
+    print(f"Generating documentation for {file_name}")
 
     sub_file = file
     new_file = file
 
-    # TODO add a verbose mode
-
     while 'def ' in sub_file:
         function = pull_out_top_function(sub_file)
-        # grab file name and say, "generating documentation for ____
+
+        name = get_function_name(function)
+        print(f'Generating documentation for {name}')
 
         original_function = function
         summary = generate_code_summary(function, model_and_tokenizer=model_name)
@@ -81,3 +91,4 @@ def add_documentation_to_file(file_name,
             original_function):]  # grab the rest of the file after the function
 
     write_file(file_name, new_file)
+    print(f"Generated documentation for {file_name}")
