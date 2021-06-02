@@ -37,22 +37,71 @@ def write_file(file_name, file_contents):
     f.close()
 
 
-def pull_out_top_function(file_string):
-    # find first def
-    index = file_string.find('def ')  # won't work if something ends in def like a variable
-    if index == -1:
+def pull_out_top_function(file_string, indentation):
+    if file_string.find('def ') == -1:
         return None
 
-    # then grab all of the following text until there is no space between a newline character and the next character
-    # (signifying the first code outside the function)
-    sub_file = file_string[index:]
-    for i in range(len(sub_file) - 1):
-        # you don't look for return statements because there can be more than one
-        if sub_file[i] == '\n' and not sub_file[i + 1].isspace():
-            return sub_file[:i]
+    lines = file_string.split('\n')
 
-    # def was found but
-    return sub_file.strip()
+    end = False
+    start_and_end = []  # first index is the start of the function and second is the end
+    for index in range(len(lines)):
+        line = lines[index]
+
+        # these are all of the scenarios I can think of where a function would end (looking line by line)
+
+        # case where a new function is being defined with a decorator
+        if len(line) > 1 and '@' == line[0]:
+            print(1)
+            end = True
+            start_and_end.append(index)
+
+        # case where a function is being defined with no indentation or a class is being defined
+        elif len(line) > 5 and 'def ' == line[:4]:
+            print(2)
+            end = True
+            start_and_end.append(index)
+
+        # case where there is code underneath either of these statements (auto-docs is only designed for functions)
+        elif 'if __name__ == "__main__"' in line or "if __name__ == '__main__'" in line:
+            print(3)
+            end = True
+            start_and_end.append(index)
+
+        # case where there is another function defined at the same indentation as the current function (like in a class)
+        # using len(indentation) here is important because it could be tabs or spaces
+        elif len(line) > len(indentation) + 4 and f'{indentation}def ' == line[:len(indentation) + 4]:
+            print(4)
+            end = True
+            start_and_end.append(index)
+
+        # case where a function has a decorator at the same indentation (like a static method in a class)
+        elif len(line) > len(indentation) + 1 and f'{indentation}@' == line[:len(indentation) + 1]:
+            print(5)
+            end = True
+            start_and_end.append(index)
+
+        # the code inside a function will always be indented so if a line begins with a character other than a tab or
+        # space, it must be the start of another piece of code
+        elif end:
+            if len(line) and not line[0].isspace():
+                print(6)
+                start_and_end.append(index)
+
+        if len(start_and_end) == 2:
+            break
+
+    if len(start_and_end) == 1:
+        function = '\n'.join(lines[start_and_end[0] - 1:])
+    elif len(start_and_end) == 2:
+        function = '\n'.join(lines[start_and_end[0] - 1:start_and_end[1] - 1])
+    else:
+        raise Exception(
+            'File parsing error, please check the file formatting. If this is unexpected, please open an issue here: '
+            'https://github.com/jweissenberger/auto-docs/issues/new'
+        )
+
+    return function.strip()
 
 
 def get_function_name(function: str):
@@ -60,6 +109,16 @@ def get_function_name(function: str):
     name = function.split('def')[1].split('(')[0].strip()
 
     return name
+
+
+def get_indentation(sub_file_string: str):
+
+    lines = sub_file_string.split('\n')
+
+    for line in lines:
+        if 'def ' in line:
+            return line.split('def ')[0]
+
 
 
 def add_documentation_to_file(file_name,
@@ -73,17 +132,26 @@ def add_documentation_to_file(file_name,
     new_file = file
 
     while 'def ' in sub_file:
-        function = pull_out_top_function(sub_file)
+        print('subfile:', sub_file)
+        indent = get_indentation(sub_file)
+        print(f'\nindent:"{indent}"')
+        function = pull_out_top_function(sub_file, indent)
+        print('\nfunction:\n', function, '\n\n')
 
         name = get_function_name(function)
+
+        # skip class inits
+        if name == "__init__":
+            sub_file = file[file.find(function) + len(function):]
+            continue
+
         print(f'Generating documentation for {name}')
 
         original_function = function
-        summary = generate_code_summary(function, model_and_tokenizer=model_name)
+        #summary = generate_code_summary(function.strip(), model_and_tokenizer=model_name)
+        summary = 'test'
 
-        # TODO won't work for functions within classes or things that need more spaces
-        # need to find a way to dynamically get the correct spacing
-        function = function.replace(':\n', f':\n    """\n    {summary}\n    """\n', 1)  # TODO this won't work for the case where theres a lot of type hints in the function definition and theres a ':\n'
+        function = function.replace('):\n', f'):\n{indent}    """\n{indent}    {summary}\n{indent}    """\n', 1)
 
         new_file = new_file.replace(original_function, function)
 

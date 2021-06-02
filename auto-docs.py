@@ -4,12 +4,9 @@ import click
 
 
 @click.command()
-@click.option('-f', '--file',
-              prompt='the name of the python file you want to generate documentation for',
-              help="Name of file to generate documentation for",
-              type=str)
-def main(file):
-    add_documentation_to_file(file_name=file)
+@click.argument('file_or_directory', type=click.Path(exists=True))
+def main(file_or_directory):
+    add_documentation_to_file(file_name=file_or_directory)
 
 
 if __name__ == '__main__':
