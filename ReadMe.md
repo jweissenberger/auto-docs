@@ -41,3 +41,19 @@ def chunks(l, n):
 ```
 
 You can see more results in `before.py` and `after.py`
+
+## Tips
+You can also specify the size of the model you would like to use in the command with `-m`.
+The options are `small`, `medium`, or the default `large`. 
+```bash
+python auto-docs.py file_to_get_documentation_for.py -m small
+```
+The trade off is generally inference time vs quality of the summary.
+You could hypothetically pass in any Huggingface model but others probably won't work well.
+
+
+
+auto-docs works better when you have good names for your functions and variables as they help it
+infer what your code is accomplishing. 
+
+

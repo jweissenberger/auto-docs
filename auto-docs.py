@@ -5,7 +5,8 @@ import click
 
 @click.command()
 @click.argument('file_or_directory', type=click.Path(exists=True))
-def main(file_or_directory):
+@click.option('-m', '--model', default='large', type=str, required=False)
+def main(file_or_directory, model):
 
     models = {
         'small': "SEBIS/code_trans_t5_small_code_documentation_generation_python_multitask_finetune",
@@ -14,7 +15,10 @@ def main(file_or_directory):
         'large': "SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune"
     }
 
-    add_documentation_to_file(file_name=file_or_directory)
+    if models.get(model):
+        model = models[model]
+
+    add_documentation_to_file(file_name=file_or_directory, model_name=model)
     print('\nFINISHED\n')
 
 
