@@ -18,6 +18,7 @@ Then run `auto-docs.py` and pass in the name of the file you want to generate do
 ```bash
 python auto-docs.py <name_of_your_python_file>
 ```
+This will automatically download the HuggingFace model if you don't have it already.
 
 ## Results
 auto-docs summarizes what functions do in plain english. For example, given this function:
@@ -49,7 +50,7 @@ The options are `small`, `medium`, or the default `large`.
 python auto-docs.py file_to_get_documentation_for.py -m small
 ```
 The trade off is generally inference time vs quality of the summary.
-You could hypothetically pass in any Huggingface model but others probably won't work well.
+You could hypothetically pass in any HuggingFace model but others probably won't work well.
 
 
 
