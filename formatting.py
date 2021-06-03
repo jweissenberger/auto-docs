@@ -44,6 +44,7 @@ def pull_out_top_function(file_string, indentation):
     lines = file_string.split('\n')
 
     end = False
+    decorators = False  # you can have multiple decorators on a function and we want to include them
     start_and_end = []  # first index is the start of the function and second is the end
     for index in range(len(lines)):
         line = lines[index]
@@ -52,40 +53,43 @@ def pull_out_top_function(file_string, indentation):
 
         # case where a new function is being defined with a decorator
         if len(line) > 1 and '@' == line[0]:
-            print(1)
             end = True
-            start_and_end.append(index)
+            if not decorators:
+                start_and_end.append(index)
+            decorators = True
 
         # case where a function is being defined with no indentation or a class is being defined
         elif len(line) > 5 and 'def ' == line[:4]:
-            print(2)
             end = True
-            start_and_end.append(index)
+            if not decorators:
+                start_and_end.append(index)
+
+            decorators = False
 
         # case where there is code underneath either of these statements (auto-docs is only designed for functions)
         elif 'if __name__ == "__main__"' in line or "if __name__ == '__main__'" in line:
-            print(3)
             end = True
             start_and_end.append(index)
 
         # case where there is another function defined at the same indentation as the current function (like in a class)
         # using len(indentation) here is important because it could be tabs or spaces
         elif len(line) > len(indentation) + 4 and f'{indentation}def ' == line[:len(indentation) + 4]:
-            print(4)
             end = True
-            start_and_end.append(index)
+            if not decorators:
+                start_and_end.append(index)
+            decorators = False
 
         # case where a function has a decorator at the same indentation (like a static method in a class)
         elif len(line) > len(indentation) + 1 and f'{indentation}@' == line[:len(indentation) + 1]:
-            print(5)
             end = True
-            start_and_end.append(index)
+            if not decorators:
+                start_and_end.append(index)
+            decorators = True
 
         # the code inside a function will always be indented so if a line begins with a character other than a tab or
         # space, it must be the start of another piece of code
         elif end:
             if len(line) and not line[0].isspace():
-                print(6)
                 start_and_end.append(index)
 
         if len(start_and_end) == 2:
@@ -120,7 +124,6 @@ def get_indentation(sub_file_string: str):
             return line.split('def ')[0]
 
 
-
 def add_documentation_to_file(file_name,
                               model_name="SEBIS/code_trans_t5_large_code_documentation_generation_python_multitask_finetune",
                               ):
@@ -132,11 +135,9 @@ def add_documentation_to_file(file_name,
     new_file = file
 
     while 'def ' in sub_file:
-        print('subfile:', sub_file)
+
         indent = get_indentation(sub_file)
-        print(f'\nindent:"{indent}"')
         function = pull_out_top_function(sub_file, indent)
-        print('\nfunction:\n', function, '\n\n')
 
         name = get_function_name(function)
 
@@ -148,8 +149,7 @@ def add_documentation_to_file(file_name,
         print(f'Generating documentation for {name}')
 
         original_function = function
-        #summary = generate_code_summary(function.strip(), model_and_tokenizer=model_name)
-        summary = 'test'
+        summary = generate_code_summary(function.strip(), model_and_tokenizer=model_name)
 
         function = function.replace('):\n', f'):\n{indent}    """\n{indent}    {summary}\n{indent}    """\n', 1)
 
